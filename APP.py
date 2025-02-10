@@ -85,37 +85,63 @@ def calcular_distancias(df, top_n=10):
     st.success("✅ Análisis completado y mostrado en la app.")
 
     
-def mapa_personalizado(df):
+ef mapa_personalizado(df):
     """
-    Genera un mapa filtrando los datos según variables seleccionadas automáticamente.
+    Genera un mapa filtrando los datos según hasta cuatro variables seleccionadas por el usuario.
 
     Parámetros:
     - df: DataFrame con los datos de clientes.
     """
     
+    # Definir las variables disponibles para filtrar
+    variables_disponibles = {
+        "Ingreso Anual (USD)": "Ingreso_Anual_USD",
+        "Edad": "Edad",
+        "Frecuencia de Compra": "Frecuencia_Compra",
+        "Género": "Género"
+    }
+
     # Verificar que las columnas necesarias existen en el DataFrame
-    columnas_necesarias = {'Latitud', 'Longitud', 'Ingreso_Anual_USD', 'Edad'}
-    columnas_faltantes = columnas_necesarias - set(df.columns)
+    columnas_faltantes = set(variables_disponibles.values()) - set(df.columns)
     
     if columnas_faltantes:
         st.error(f"⚠️ Error: Faltan las siguientes columnas en el DataFrame: {columnas_faltantes}")
         return  # Detiene la ejecución si faltan columnas
 
-    # Obtener valores mínimo y máximo de variables clave
-    ingresos_min, ingresos_max = df['Ingreso_Anual_USD'].min(), df['Ingreso_Anual_USD'].max()
-    edad_min, edad_max = df['Edad'].min(), df['Edad'].max()
-
-    # Agregar controles en Streamlit para filtrar los datos
+    # Selección de variables en la barra lateral
     with st.sidebar:
         st.header("Filtros del Mapa")
-        ingresos_rango = st.slider("Rango de Ingresos (USD)", ingresos_min, ingresos_max, (ingresos_min, ingresos_max))
-        edad_rango = st.slider("Rango de Edad", edad_min, edad_max, (edad_min, edad_max))
+        variables_seleccionadas = st.multiselect("Selecciona hasta 4 criterios de filtrado:", list(variables_disponibles.keys()), default=["Ingreso Anual (USD)"])
+
+        # Limitar a máximo 4 variables
+        if len(variables_seleccionadas) > 4:
+            st.warning("⚠️ Solo puedes seleccionar hasta 4 criterios.")
+            return
+    
+        # Crear diccionario de filtros basado en la selección del usuario
+        filtros = {}
+        for variable in variables_seleccionadas:
+            columna = variables_disponibles[variable]
+            
+            # Si es numérica, usar slider para rango
+            if df[columna].dtype in ["int64", "float64"]:
+                min_val, max_val = df[columna].min(), df[columna].max()
+                rango = st.slider(f"{variable} ({min_val} - {max_val})", min_val, max_val, (min_val, max_val))
+                filtros[columna] = rango
+            
+            # Si es categórica, usar checkbox
+            else:
+                valores_unicos = df[columna].unique().tolist()
+                seleccionados = st.multiselect(f"{variable} (Selecciona categorías)", valores_unicos, default=valores_unicos)
+                filtros[columna] = seleccionados
 
     # Aplicar los filtros al DataFrame
-    df_filtrado = df[
-        (df['Ingreso_Anual_USD'] >= ingresos_rango[0]) & (df['Ingreso_Anual_USD'] <= ingresos_rango[1]) &
-        (df['Edad'] >= edad_rango[0]) & (df['Edad'] <= edad_rango[1])
-    ]
+    df_filtrado = df.copy()
+    for columna, criterio in filtros.items():
+        if isinstance(criterio, tuple):  # Rango numérico
+            df_filtrado = df_filtrado[(df_filtrado[columna] >= criterio[0]) & (df_filtrado[columna] <= criterio[1])]
+        else:  # Filtro de categorías
+            df_filtrado = df_filtrado[df_filtrado[columna].isin(criterio)]
 
     # Crear un GeoDataFrame con los puntos filtrados
     gdf = gpd.GeoDataFrame(df_filtrado, geometry=gpd.points_from_xy(df_filtrado['Longitud'], df_filtrado['Latitud']), crs="EPSG:4326")
