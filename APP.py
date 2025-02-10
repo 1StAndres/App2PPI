@@ -87,7 +87,7 @@ def mapa_ubicaciones_clientes(df):
     world.plot(ax=ax, color="lightgrey", edgecolor="black")
     
     # Graficar los puntos de los clientes
-    gdf.plot(ax=ax, markersize=30, color="red", alpha=0.7)
+    gdf.plot(ax=ax, markersize=1, color="red", alpha=0.7)
 
     # Etiquetas
     plt.title("Mapa de Ubicaciones de Clientes")
