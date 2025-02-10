@@ -20,20 +20,28 @@ def cargar_datos():
 
 df, gdf = cargar_datos()
 
+# Estado de carga de CSS
+css_cargado = False
+
 # Función para cargar CSS
 @st.cache_data
 def cargar_css(css_link=None, css_file=None):
+    global css_cargado
     if css_link:
         st.markdown(f'<link rel="stylesheet" href="{css_link}">', unsafe_allow_html=True)
+        css_cargado = True
     elif css_file:
         css = css_file.read().decode("utf-8")
         st.markdown(f'<style>{css}</style>', unsafe_allow_html=True)
+        css_cargado = True
 
 # Interfaz para subir o ingresar CSS
 st.sidebar.header("Personalización CSS")
 css_link = st.sidebar.text_input("Ingresa URL del CSS:")
 css_file = st.sidebar.file_uploader("O carga un archivo CSS", type=["css"])
-cargar_css(css_link, css_file)
+
+if css_link or css_file:
+    cargar_css(css_link, css_file)
 
 # Título de la App
 st.title("Análisis de Clientes con Streamlit")
@@ -71,13 +79,16 @@ def analizar_cluster_frecuencia(df, n_clusters=3):
 
 # Interfaz de selección en Streamlit
 st.sidebar.header("Opciones de Visualización")
-opcion = st.sidebar.selectbox("Selecciona un análisis", ["Mapa de Calor", "Distribución de Clientes", "Clúster de Frecuencia"])
+if css_cargado:
+    opcion = st.sidebar.selectbox("Selecciona un análisis", ["Mapa de Calor", "Distribución de Clientes", "Clúster de Frecuencia"])
 
-if opcion == "Mapa de Calor":
-    mapa_calor_ingresos(df)
-elif opcion == "Distribución de Clientes":
-    graficar_barras_genero_frecuencia(df)
-elif opcion == "Clúster de Frecuencia":
-    analizar_cluster_frecuencia(df)
+    if opcion == "Mapa de Calor":
+        mapa_calor_ingresos(df)
+    elif opcion == "Distribución de Clientes":
+        graficar_barras_genero_frecuencia(df)
+    elif opcion == "Clúster de Frecuencia":
+        analizar_cluster_frecuencia(df)
+else:
+    st.sidebar.warning("Por favor, carga un archivo CSS o ingresa un enlace antes de visualizar los análisis.")
 
 st.sidebar.text("Datos cargados con éxito")
