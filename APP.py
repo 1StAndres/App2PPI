@@ -69,7 +69,7 @@ def mapa_ubicaciones_clientes(df):
     fig, ax = plt.subplots(figsize=(12, 6))
     df_mapa.plot(ax=ax, color="lightgrey", edgecolor="black")
     
-    ax.scatter(df["Longitud"], df["Latitud"], color="red", alpha=0.6, s=10, label="Clientes")
+    ax.scatter(df["Longitud"], df["Latitud"], color="red", alpha=0.6, s=1, label="Clientes")
     plt.legend()
     plt.title("Ubicación de Clientes en el Mapa del Mundo")
     st.pyplot(fig)
