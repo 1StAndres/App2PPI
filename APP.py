@@ -48,6 +48,14 @@ st.title("Análisis de Clientes con Streamlit")
 
 # Mapa de calor de ingresos
 def mapa_calor_ingresos(df):
+    ruta_0 = "https://naturalearth.s3.amazonaws.com/50m_cultural/ne_50m_admin_0_countries.zip"
+    df_mapa = gpd.read_file(ruta_0)
+
+    # Crear la figura
+    fig, ax = plt.subplots(figsize=(12, 6))
+    
+    # Dibujar el mapa base
+    df_mapa.plot(ax=ax, color="lightgrey", edgecolor="black")
     fig, ax = plt.subplots(figsize=(12, 6))
     sns.kdeplot(
         data=df, x="Longitud", y="Latitud", weights=df["Ingreso_Anual_USD"],
