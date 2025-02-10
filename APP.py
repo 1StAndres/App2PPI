@@ -93,12 +93,14 @@ def mapa_personalizado(df):
     - df: DataFrame con los datos de clientes.
     """
     
-    # Definir las variables disponibles para filtrar
+    # Definir las variables disponibles para filtrar, incluyendo Latitud y Longitud
     variables_disponibles = {
         "Ingreso Anual (USD)": "Ingreso_Anual_USD",
         "Edad": "Edad",
         "Frecuencia de Compra": "Frecuencia_Compra",
-        "Género": "Género"
+        "Género": "Género",
+        "Latitud": "Latitud",
+        "Longitud": "Longitud"
     }
 
     # Verificar que las columnas necesarias existen en el DataFrame
@@ -123,13 +125,13 @@ def mapa_personalizado(df):
         for variable in variables_seleccionadas:
             columna = variables_disponibles[variable]
             
-            # Si es numérica, usar slider para rango
+            # Si es numérica (Edad, Ingreso, Latitud, Longitud), usar slider
             if df[columna].dtype in ["int64", "float64"]:
                 min_val, max_val = df[columna].min(), df[columna].max()
-                rango = st.slider(f"{variable} ({min_val} - {max_val})", min_val, max_val, (min_val, max_val))
+                rango = st.slider(f"{variable} ({min_val:.2f} - {max_val:.2f})", min_val, max_val, (min_val, max_val))
                 filtros[columna] = rango
             
-            # Si es categórica, usar checkbox
+            # Si es categórica (Ej: Género, Frecuencia de Compra), usar multiselect
             else:
                 valores_unicos = df[columna].unique().tolist()
                 seleccionados = st.multiselect(f"{variable} (Selecciona categorías)", valores_unicos, default=valores_unicos)
