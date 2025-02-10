@@ -15,6 +15,40 @@ if 'css_cargado' not in st.session_state:
 
 # Cargar datos
 @st.cache_data
+def mapa_personalizado(df, variables):
+    """
+    Genera un mapa filtrando los datos según las variables seleccionadas por el usuario.
+    
+    Parámetros:
+    - df: DataFrame con los datos de clientes.
+    - variables: Diccionario con las variables seleccionadas y sus rangos.
+    """
+    filtros = [(df[var] >= r[0]) & (df[var] <= r[1]) for var, r in variables.items()]
+    df_filtrado = df[np.logical_and.reduce(filtros)]
+    
+    # Crear un GeoDataFrame con los puntos filtrados
+    gdf = gpd.GeoDataFrame(df_filtrado, geometry=gpd.points_from_xy(df_filtrado['Longitud'], df_filtrado['Latitud']), crs="EPSG:4326")
+    
+    # Cargar mapa base desde Natural Earth
+    world = gpd.read_file("https://naturalearth.s3.amazonaws.com/50m_cultural/ne_50m_admin_0_countries.zip")
+    
+    # Crear figura y ejes
+    fig, ax = plt.subplots(figsize=(10, 6))
+    
+    # Dibujar el mapa base
+    world.plot(ax=ax, color="lightgrey", edgecolor="black")
+    
+    # Graficar los puntos filtrados
+    gdf.plot(ax=ax, markersize=2, color="blue", alpha=0.7)
+    
+    # Etiquetas
+    plt.title("Mapa Personalizado de Clientes")
+    plt.xlabel("Longitud")
+    plt.ylabel("Latitud")
+    
+    # Mostrar el gráfico en Streamlit
+    st.pyplot(fig)
+    
 def analizar_cluster_frecuencia(df, n_clusters=3):
     """
     Realiza análisis de clúster basado en la ubicación (Latitud, Longitud) y la Frecuencia de Compra.
@@ -191,7 +225,7 @@ def analizar_correlacion(df):
 # Interfaz de selección en Streamlit
 st.sidebar.header("Opciones de Visualización")
 if st.session_state.css_cargado:
-    opcion = st.sidebar.selectbox("Selecciona un análisis", ["Mapa de Calor", "Mapa de Ubicaciones", "Distribución de Clientes", "Clúster de Frecuencia", "Análisis de Correlación"])
+    opcion = st.sidebar.selectbox("Selecciona un análisis", ["Mapa de Calor", "Mapa de Ubicaciones", "Distribución de Clientes", "Clúster de Frecuencia", "Análisis de Correlación", "Mapas personalizados"])
 
     if opcion == "Mapa de Calor":
         mapa_calor_ingresos(df)
@@ -203,6 +237,8 @@ if st.session_state.css_cargado:
         analizar_cluster_frecuencia(df)
     elif opcion == "Análisis de Correlación":
         analizar_correlacion(df)
+    elif opcion == "Mapas personalizados":
+        mapa_personalizado(df)
 else:
     st.sidebar.warning("Por favor, carga un archivo CSS o ingresa un enlace antes de visualizar los análisis.")
 
