@@ -49,7 +49,7 @@ def analizar_cluster_frecuencia(df, n_clusters=3):
     world.plot(ax=ax, color="lightgrey", edgecolor="black")
 
     # Graficar clientes según su cluster
-    gdf.plot(ax=ax, markersize=30, column="Cluster", cmap="viridis", legend=True, alpha=0.7)
+    gdf.plot(ax=ax, markersize=1, column="Cluster", cmap="viridis", legend=True, alpha=0.7)
 
     # Etiquetas y título
     plt.title(f"Clúster de Clientes por Ubicación y Frecuencia de Compra ({n_clusters} Clusters)")
