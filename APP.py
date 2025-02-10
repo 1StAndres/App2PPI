@@ -61,6 +61,19 @@ def mapa_calor_ingresos(df):
     plt.title("Mapa de Calor de Ingresos Anuales de Clientes")
     st.pyplot(fig)
 
+# Mapa de ubicaciones de clientes con superposición sobre el mapa del mundo
+def mapa_ubicaciones_clientes(df):
+    ruta_0 = "https://naturalearth.s3.amazonaws.com/50m_cultural/ne_50m_admin_0_countries.zip"
+    df_mapa = gpd.read_file(ruta_0)
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+    df_mapa.plot(ax=ax, color="lightgrey", edgecolor="black")
+    
+    ax.scatter(df["Longitud"], df["Latitud"], color="red", alpha=0.6, s=10, label="Clientes")
+    plt.legend()
+    plt.title("Ubicación de Clientes en el Mapa del Mundo")
+    st.pyplot(fig)
+
 # Gráfico de barras por género y frecuencia de compra
 def graficar_barras_genero_frecuencia(df):
     fig, axes = plt.subplots(1, 2, figsize=(14, 5))
@@ -85,10 +98,12 @@ def analizar_cluster_frecuencia(df, n_clusters=3):
 # Interfaz de selección en Streamlit
 st.sidebar.header("Opciones de Visualización")
 if st.session_state.css_cargado:
-    opcion = st.sidebar.selectbox("Selecciona un análisis", ["Mapa de Calor", "Distribución de Clientes", "Clúster de Frecuencia"])
+    opcion = st.sidebar.selectbox("Selecciona un análisis", ["Mapa de Calor", "Mapa de Ubicaciones", "Distribución de Clientes", "Clúster de Frecuencia"])
 
     if opcion == "Mapa de Calor":
         mapa_calor_ingresos(df)
+    elif opcion == "Mapa de Ubicaciones":
+        mapa_ubicaciones_clientes(df)
     elif opcion == "Distribución de Clientes":
         graficar_barras_genero_frecuencia(df)
     elif opcion == "Clúster de Frecuencia":
