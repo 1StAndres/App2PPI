@@ -7,6 +7,10 @@ import numpy as np
 from sklearn.cluster import KMeans
 from shapely.geometry import Point
 
+# Inicializar el estado de la aplicación
+if 'css_cargado' not in st.session_state:
+    st.session_state.css_cargado = False
+
 # Cargar datos
 @st.cache_data
 def cargar_datos():
@@ -20,20 +24,16 @@ def cargar_datos():
 
 df, gdf = cargar_datos()
 
-# Estado de carga de CSS
-css_cargado = False
-
 # Función para cargar CSS
 @st.cache_data
 def cargar_css(css_link=None, css_file=None):
-    global css_cargado
     if css_link:
         st.markdown(f'<link rel="stylesheet" href="{css_link}">', unsafe_allow_html=True)
-        css_cargado = True
+        st.session_state.css_cargado = True
     elif css_file:
         css = css_file.read().decode("utf-8")
         st.markdown(f'<style>{css}</style>', unsafe_allow_html=True)
-        css_cargado = True
+        st.session_state.css_cargado = True
 
 # Interfaz para subir o ingresar CSS
 st.sidebar.header("Personalización CSS")
@@ -79,7 +79,7 @@ def analizar_cluster_frecuencia(df, n_clusters=3):
 
 # Interfaz de selección en Streamlit
 st.sidebar.header("Opciones de Visualización")
-if css_cargado:
+if st.session_state.css_cargado:
     opcion = st.sidebar.selectbox("Selecciona un análisis", ["Mapa de Calor", "Distribución de Clientes", "Clúster de Frecuencia"])
 
     if opcion == "Mapa de Calor":
@@ -91,4 +91,6 @@ if css_cargado:
 else:
     st.sidebar.warning("Por favor, carga un archivo CSS o ingresa un enlace antes de visualizar los análisis.")
 
-st.sidebar.text("Datos cargados con éxito")
+if df is not None:
+    st.sidebar.text("Datos cargados con éxito")
+
