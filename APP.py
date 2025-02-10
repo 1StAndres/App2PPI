@@ -85,7 +85,7 @@ def calcular_distancias(df, top_n=10):
     st.success("✅ Análisis completado y mostrado en la app.")
 
     
-ef mapa_personalizado(df):
+def mapa_personalizado(df):
     """
     Genera un mapa filtrando los datos según hasta cuatro variables seleccionadas por el usuario.
 
