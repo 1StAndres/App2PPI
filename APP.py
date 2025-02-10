@@ -18,21 +18,25 @@ if 'css_cargado' not in st.session_state:
 def calcular_distancias(df, top_n=10):
     """
     Calcula las distancias entre los compradores con mayores ingresos,
-    considerando general, por género y por frecuencia de compras.
+    considerando general, por género y por frecuencia.
 
     Parámetros:
-    - df (DataFrame): Dataset con las columnas 'Latitud', 'Longitud', 'Ingreso_Anual_USD', 'Género' y 'Frecuencia_Compras'.
+    - df (DataFrame): Dataset con las columnas 'Latitud', 'Longitud', 'Ingreso_Anual_USD', 'Género' y 'Frecuencia_Compra'.
     - top_n (int): Número de compradores de mayores ingresos a considerar.
 
     Retorna:
     - Diccionario con matrices de distancia para general, por género y por frecuencia.
     """
 
-    # Verificar que las columnas necesarias existen
-    columnas_necesarias = {'Latitud', 'Longitud', 'Ingreso_Anual_USD', 'Género', 'Frecuencia_Compras'}
-    if not columnas_necesarias.issubset(df.columns):
-        raise ValueError(f"Faltan columnas: {columnas_necesarias - set(df.columns)}")
-
+    # Definir las columnas requeridas (corregidas según el DataFrame)
+    columnas_necesarias = {'Latitud', 'Longitud', 'Ingreso_Anual_USD', 'Género', 'Frecuencia_Compra'}
+    
+    # Verificar que todas las columnas existen
+    columnas_faltantes = columnas_necesarias - set(df.columns)
+    if columnas_faltantes:
+        st.error(f"⚠️ Error: Faltan las siguientes columnas en el DataFrame: {columnas_faltantes}")
+        return None  # Evita que la función siga ejecutándose
+    
     # Seleccionar los Top-N compradores de mayores ingresos
     top_compradores = df.nlargest(top_n, 'Ingreso_Anual_USD')
 
@@ -56,7 +60,7 @@ def calcular_distancias(df, top_n=10):
 
     # Crear variables categóricas como máscaras booleanas
     generos_dummies = pd.get_dummies(top_compradores['Género']).values
-    frecuencia_dummies = pd.get_dummies(top_compradores['Frecuencia_Compras']).values
+    frecuencia_dummies = pd.get_dummies(top_compradores['Frecuencia_Compra']).values
 
     # Aplicar máscaras booleanas en NumPy para obtener subconjuntos de coordenadas
     latitudes_genero = generos_dummies.T @ top_compradores['Latitud'].values
