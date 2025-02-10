@@ -85,65 +85,60 @@ def calcular_distancias(df, top_n=10):
     st.success("✅ Análisis completado y mostrado en la app.")
 
     
-def mapa_personalizado(df, variables):
+def mapa_personalizado(df):
     """
-    Genera un mapa filtrando los datos según las variables seleccionadas por el usuario.
-    
+    Genera un mapa filtrando los datos según variables seleccionadas automáticamente.
+
     Parámetros:
-    - df (DataFrame): Datos de clientes con 'Latitud' y 'Longitud'.
-    - variables (dict): Variables seleccionadas con sus rangos {columna: (min, max)}.
-
-    Muestra el mapa directamente en la app de Streamlit.
+    - df: DataFrame con los datos de clientes.
     """
-
-    # 📌 Verificar si el DataFrame contiene las columnas necesarias
-    columnas_necesarias = {"Latitud", "Longitud"}
+    
+    # Verificar que las columnas necesarias existen en el DataFrame
+    columnas_necesarias = {'Latitud', 'Longitud', 'Ingreso_Anual_USD', 'Edad'}
     columnas_faltantes = columnas_necesarias - set(df.columns)
     
     if columnas_faltantes:
-        st.error(f"⚠️ Error: Faltan las columnas necesarias en el DataFrame: {columnas_faltantes}")
-        return
+        st.error(f"⚠️ Error: Faltan las siguientes columnas en el DataFrame: {columnas_faltantes}")
+        return  # Detiene la ejecución si faltan columnas
 
-    # 📌 Aplicar filtros según las variables seleccionadas
-    try:
-        query_str = " & ".join([f"(@rango[0] <= `{col}` <= @rango[1])" for col in variables])
-        df_filtrado = df.query(query_str, local_dict={'rango': variables})
-    except Exception as e:
-        st.error(f"⚠️ Error al aplicar filtros: {str(e)}")
-        return
+    # Obtener valores mínimo y máximo de variables clave
+    ingresos_min, ingresos_max = df['Ingreso_Anual_USD'].min(), df['Ingreso_Anual_USD'].max()
+    edad_min, edad_max = df['Edad'].min(), df['Edad'].max()
 
-    # 📌 Validar si hay datos después del filtrado
-    if df_filtrado.empty:
-        st.warning("⚠️ No hay datos que coincidan con los filtros seleccionados.")
-        return
+    # Agregar controles en Streamlit para filtrar los datos
+    with st.sidebar:
+        st.header("Filtros del Mapa")
+        ingresos_rango = st.slider("Rango de Ingresos (USD)", ingresos_min, ingresos_max, (ingresos_min, ingresos_max))
+        edad_rango = st.slider("Rango de Edad", edad_min, edad_max, (edad_min, edad_max))
 
-    # 📌 Crear un GeoDataFrame con los puntos filtrados
-    gdf = gpd.GeoDataFrame(df_filtrado, 
-                           geometry=gpd.points_from_xy(df_filtrado['Longitud'], df_filtrado['Latitud']), 
-                           crs="EPSG:4326")
+    # Aplicar los filtros al DataFrame
+    df_filtrado = df[
+        (df['Ingreso_Anual_USD'] >= ingresos_rango[0]) & (df['Ingreso_Anual_USD'] <= ingresos_rango[1]) &
+        (df['Edad'] >= edad_rango[0]) & (df['Edad'] <= edad_rango[1])
+    ]
 
-    # 📌 Cargar mapa base desde GeoPandas
-    world = gpd.read_file(gpd.datasets.get_path("naturalearth_lowres"))
+    # Crear un GeoDataFrame con los puntos filtrados
+    gdf = gpd.GeoDataFrame(df_filtrado, geometry=gpd.points_from_xy(df_filtrado['Longitud'], df_filtrado['Latitud']), crs="EPSG:4326")
 
-    # 📌 Crear la figura y el eje para el mapa
+    # Cargar mapa base desde Natural Earth
+    world = gpd.read_file("https://naturalearth.s3.amazonaws.com/50m_cultural/ne_50m_admin_0_countries.zip")
+
+    # Crear figura y ejes
     fig, ax = plt.subplots(figsize=(10, 6))
 
-    # 📌 Dibujar el mapa base
+    # Dibujar el mapa base
     world.plot(ax=ax, color="lightgrey", edgecolor="black")
 
-    # 📌 Graficar los puntos filtrados con un tamaño adecuado
-    gdf.plot(ax=ax, markersize=30, color="blue", alpha=0.7)
+    # Graficar los puntos filtrados
+    gdf.plot(ax=ax, markersize=2, color="blue", alpha=0.7)
 
-    # 📌 Agregar etiquetas y formato
-    plt.title("📍 Mapa Personalizado de Clientes", fontsize=14)
-    plt.xlabel("Longitud", fontsize=12)
-    plt.ylabel("Latitud", fontsize=12)
+    # Etiquetas
+    plt.title("Mapa Personalizado de Clientes")
+    plt.xlabel("Longitud")
+    plt.ylabel("Latitud")
 
-    # 📌 Mostrar el gráfico en Streamlit
+    # Mostrar el gráfico en Streamlit
     st.pyplot(fig)
-
-    # 📌 Mensaje de éxito
-    st.success("✅ Mapa generado con éxito.")
     
 def analizar_cluster_frecuencia(df, n_clusters=3):
     """
