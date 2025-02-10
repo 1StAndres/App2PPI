@@ -20,6 +20,21 @@ def cargar_datos():
 
 df, gdf = cargar_datos()
 
+# Función para cargar CSS
+@st.cache_data
+def cargar_css(css_link=None, css_file=None):
+    if css_link:
+        st.markdown(f'<link rel="stylesheet" href="{css_link}">', unsafe_allow_html=True)
+    elif css_file:
+        css = css_file.read().decode("utf-8")
+        st.markdown(f'<style>{css}</style>', unsafe_allow_html=True)
+
+# Interfaz para subir o ingresar CSS
+st.sidebar.header("Personalización CSS")
+css_link = st.sidebar.text_input("Ingresa URL del CSS:")
+css_file = st.sidebar.file_uploader("O carga un archivo CSS", type=["css"])
+cargar_css(css_link, css_file)
+
 # Título de la App
 st.title("Análisis de Clientes con Streamlit")
 
