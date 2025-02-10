@@ -72,11 +72,11 @@ def calcular_distancias(df, top_n=10):
     distancias_por_genero = matriz_distancias(latitudes_genero, longitudes_genero)
     distancias_por_frecuencia = matriz_distancias(latitudes_frecuencia, longitudes_frecuencia)
 
-    return {
-        st.write("General": distancias_generales,)
-        "Por_Género": distancias_por_genero,
-        "Por_Frecuencia": distancias_por_frecuencia
-    }
+
+    st.write("General": distancias_generales,)
+    "Por_Género": distancias_por_genero,
+    "Por_Frecuencia": distancias_por_frecuencia
+
     
 def mapa_personalizado(df, variables):
     """
