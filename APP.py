@@ -64,7 +64,7 @@ def mapa_calor_ingresos(df):
     st.pyplot(fig)
 
 # Mapa interactivo de ubicaciones de clientes
-def visualizar_mapa_clientes(gdf):
+def visualizar_mapa_clientes(df):
     """
     Superpone los clientes en el mapa del mundo usando matplotlib y geopandas.
     Genera tres mapas:
@@ -72,6 +72,18 @@ def visualizar_mapa_clientes(gdf):
     - Segmentación por Género.
     - Segmentación por Frecuencia de Compra.
     """
+
+    # Asegurar que las coordenadas sean numéricas
+    df[['Latitud', 'Longitud']] = df[['Latitud', 'Longitud']].apply(pd.to_numeric, errors='coerce')
+
+    # Aplicar interpolación para corregir valores faltantes
+    df_interpolado = df.interpolate(method='linear', limit_direction='both')
+
+    # Crear geometría de puntos
+    geometry = gpd.points_from_xy(df_interpolado['Longitud'], df_interpolado['Latitud'])
+
+    # Crear GeoDataFrame con sistema de referencia espacial (EPSG:4326 - WGS 84)
+    gdf = gpd.GeoDataFrame(df_interpolado, geometry=geometry, crs="EPSG:4326")
 
     # Cargar mapa base
     ruta_mapa = "https://naturalearth.s3.amazonaws.com/50m_cultural/ne_50m_admin_0_countries.zip"
