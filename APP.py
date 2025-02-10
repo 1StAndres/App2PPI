@@ -46,22 +46,19 @@ if css_link or css_file:
 # Título de la App
 st.title("Análisis de Clientes con Streamlit")
 
-# Mapa de calor de ingresos
+# Mapa de calor de ingresos con mapa del mundo
 def mapa_calor_ingresos(df):
     ruta_0 = "https://naturalearth.s3.amazonaws.com/50m_cultural/ne_50m_admin_0_countries.zip"
     df_mapa = gpd.read_file(ruta_0)
 
-    # Crear la figura
     fig, ax = plt.subplots(figsize=(12, 6))
-    
-    # Dibujar el mapa base
     df_mapa.plot(ax=ax, color="lightgrey", edgecolor="black")
-    fig, ax = plt.subplots(figsize=(12, 6))
+    
     sns.kdeplot(
         data=df, x="Longitud", y="Latitud", weights=df["Ingreso_Anual_USD"],
-        cmap="inferno", fill=True, alpha=0.6, levels=50
+        cmap="inferno", fill=True, alpha=0.6, levels=50, ax=ax
     )
-    plt.title("Mapa de Calor de Ingresos Anuales")
+    plt.title("Mapa de Calor de Ingresos Anuales de Clientes")
     st.pyplot(fig)
 
 # Gráfico de barras por género y frecuencia de compra
@@ -101,4 +98,5 @@ else:
 
 if df is not None:
     st.sidebar.text("Datos cargados con éxito")
+
 
