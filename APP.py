@@ -17,34 +17,29 @@ if 'css_cargado' not in st.session_state:
 @st.cache_data
 def calcular_distancias(df, top_n=10):
     """
-    Calcula las distancias entre los compradores con mayores ingresos,
+    Calcula y muestra en Streamlit las distancias entre los compradores con mayores ingresos,
     considerando general, por género y por frecuencia.
 
     Parámetros:
     - df (DataFrame): Dataset con las columnas 'Latitud', 'Longitud', 'Ingreso_Anual_USD', 'Género' y 'Frecuencia_Compra'.
     - top_n (int): Número de compradores de mayores ingresos a considerar.
 
-    Retorna:
-    - Diccionario con matrices de distancia para general, por género y por frecuencia.
+    No retorna valores, muestra directamente en la app de Streamlit.
     """
 
-    # Definir las columnas requeridas (corregidas según el DataFrame)
+    # 📌 Verificar que el DataFrame contiene las columnas necesarias
     columnas_necesarias = {'Latitud', 'Longitud', 'Ingreso_Anual_USD', 'Género', 'Frecuencia_Compra'}
-    
-    # Verificar que todas las columnas existen
     columnas_faltantes = columnas_necesarias - set(df.columns)
     if columnas_faltantes:
         st.error(f"⚠️ Error: Faltan las siguientes columnas en el DataFrame: {columnas_faltantes}")
-        return None  # Evita que la función siga ejecutándose
-    
-    # Seleccionar los Top-N compradores de mayores ingresos
+        return  # Detiene la ejecución para evitar errores
+
+    # 📌 Seleccionar los Top-N compradores con mayores ingresos
     top_compradores = df.nlargest(top_n, 'Ingreso_Anual_USD')
 
-    # Convertir coordenadas a radianes
-    coords = np.radians(top_compradores[['Latitud', 'Longitud']].values)
-
+    # 📌 Función para calcular matrices de distancia geodésicas
     def matriz_distancias(latitudes, longitudes):
-        """Calcula matriz de distancias geodésicas usando NumPy sin ciclos for."""
+        """Calcula la matriz de distancias geodésicas usando NumPy sin ciclos for."""
         coords = np.radians(np.column_stack((latitudes, longitudes)))
         lat1, lon1 = coords[:, None, 0], coords[:, None, 1]
         lat2, lon2 = coords[:, 0], coords[:, 1]
@@ -53,31 +48,42 @@ def calcular_distancias(df, top_n=10):
         dlon = lon2 - lon1
         a = np.sin(dlat / 2) ** 2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon / 2) ** 2
         c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
-        return 6371 * c  # Distancia en km
+        return 6371 * c  # Distancia en kilómetros
 
-    # Matriz de distancias generales
+    # 📌 Matriz de distancias generales
     distancias_generales = matriz_distancias(top_compradores['Latitud'].values, top_compradores['Longitud'].values)
 
-    # Crear variables categóricas como máscaras booleanas
+    # 📌 Crear variables categóricas como máscaras booleanas
     generos_dummies = pd.get_dummies(top_compradores['Género']).values
     frecuencia_dummies = pd.get_dummies(top_compradores['Frecuencia_Compra']).values
 
-    # Aplicar máscaras booleanas en NumPy para obtener subconjuntos de coordenadas
+    # 📌 Aplicar máscaras booleanas en NumPy para obtener subconjuntos de coordenadas
     latitudes_genero = generos_dummies.T @ top_compradores['Latitud'].values
     longitudes_genero = generos_dummies.T @ top_compradores['Longitud'].values
     latitudes_frecuencia = frecuencia_dummies.T @ top_compradores['Latitud'].values
     longitudes_frecuencia = frecuencia_dummies.T @ top_compradores['Longitud'].values
 
-    # Calcular matrices de distancia para cada subconjunto
+    # 📌 Calcular matrices de distancia para cada subconjunto
     distancias_por_genero = matriz_distancias(latitudes_genero, longitudes_genero)
     distancias_por_frecuencia = matriz_distancias(latitudes_frecuencia, longitudes_frecuencia)
-    st.write("...........")
 
-    return{
-        "General": distancias_generales,
-        "Por_Género": distancias_por_genero,
-        "Por_Frecuencia": distancias_por_frecuencia
-    }
+    # 📌 Mostrar resultados en Streamlit
+    st.subheader("📊 Análisis de Distancias Discriminadas")
+    
+    with st.expander("📌 Distancias Generales"):
+        st.write("Matriz de Distancias Generales (Top-N Compradores):")
+        st.dataframe(pd.DataFrame(distancias_generales))
+
+    with st.expander("📌 Distancias por Género"):
+        st.write("Matriz de Distancias entre Compradores según Género:")
+        st.dataframe(pd.DataFrame(distancias_por_genero))
+
+    with st.expander("📌 Distancias por Frecuencia de Compra"):
+        st.write("Matriz de Distancias entre Compradores según Frecuencia de Compra:")
+        st.dataframe(pd.DataFrame(distancias_por_frecuencia))
+    
+    st.success("✅ Análisis completado y mostrado en la app.")
+
     
 def mapa_personalizado(df, variables):
     """
