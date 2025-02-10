@@ -88,12 +88,12 @@ def calcular_distancias(df, top_n=10):
 def mapa_personalizado(df):
     """
     Genera un mapa filtrando los datos según hasta cuatro variables seleccionadas por el usuario.
-
+    
     Parámetros:
     - df: DataFrame con los datos de clientes.
     """
-    
-    # Definir las variables disponibles para filtrar, incluyendo Latitud y Longitud
+
+    # Diccionario de variables disponibles para filtrar
     variables_disponibles = {
         "Ingreso Anual (USD)": "Ingreso_Anual_USD",
         "Edad": "Edad",
@@ -103,47 +103,53 @@ def mapa_personalizado(df):
         "Longitud": "Longitud"
     }
 
-    # Verificar que las columnas necesarias existen en el DataFrame
+    # Verificar que las columnas requeridas existen
     columnas_faltantes = set(variables_disponibles.values()) - set(df.columns)
-    
     if columnas_faltantes:
         st.error(f"⚠️ Error: Faltan las siguientes columnas en el DataFrame: {columnas_faltantes}")
         return  # Detiene la ejecución si faltan columnas
 
-    # Selección de variables en la barra lateral
+    # Barra lateral para la selección de filtros
     with st.sidebar:
         st.header("Filtros del Mapa")
         variables_seleccionadas = st.multiselect("Selecciona hasta 4 criterios de filtrado:", list(variables_disponibles.keys()), default=["Ingreso Anual (USD)"])
 
-        # Limitar a máximo 4 variables
+        # Validación: máximo 4 variables seleccionadas
         if len(variables_seleccionadas) > 4:
             st.warning("⚠️ Solo puedes seleccionar hasta 4 criterios.")
             return
-    
-        # Crear diccionario de filtros basado en la selección del usuario
-        filtros = {}
-        for variable in variables_seleccionadas:
-            columna = variables_disponibles[variable]
-            
-            # Si es numérica (Edad, Ingreso, Latitud, Longitud), usar slider
-            if df[columna].dtype in ["int64", "float64"]:
-                min_val, max_val = df[columna].min(), df[columna].max()
-                rango = st.slider(f"{variable} ({min_val:.2f} - {max_val:.2f})", min_val, max_val, (min_val, max_val))
-                filtros[columna] = rango
-            
-            # Si es categórica (Ej: Género, Frecuencia de Compra), usar multiselect
-            else:
-                valores_unicos = df[columna].unique().tolist()
-                seleccionados = st.multiselect(f"{variable} (Selecciona categorías)", valores_unicos, default=valores_unicos)
-                filtros[columna] = seleccionados
 
-    # Aplicar los filtros al DataFrame
-    df_filtrado = df.copy()
-    for columna, criterio in filtros.items():
-        if isinstance(criterio, tuple):  # Rango numérico
-            df_filtrado = df_filtrado[(df_filtrado[columna] >= criterio[0]) & (df_filtrado[columna] <= criterio[1])]
-        else:  # Filtro de categorías
-            df_filtrado = df_filtrado[df_filtrado[columna].isin(criterio)]
+        # Convertir selección a NumPy para mejor rendimiento
+        seleccionadas_np = np.array(variables_seleccionadas)
+        claves_np = np.array(list(variables_disponibles.keys()))
+        valores_np = np.array(list(variables_disponibles.values()))
+
+        # Filtrar variables numéricas y categóricas sin `for`
+        indices_num = np.isin(seleccionadas_np, ["Ingreso Anual (USD)", "Edad", "Latitud", "Longitud"])
+        indices_cat = np.isin(seleccionadas_np, ["Frecuencia de Compra", "Género"])
+
+        col_numericas = valores_np[indices_num]
+        col_categoricas = valores_np[indices_cat]
+
+        df_filtrado = df.copy()
+
+        # Aplicar filtros numéricos
+        if col_numericas.size > 0:
+            min_vals = df[col_numericas].min().values
+            max_vals = df[col_numericas].max().values
+            rangos = np.array(st.slider("Selecciona rangos para variables numéricas:", float(min_vals.min()), float(max_vals.max()), (float(min_vals.min()), float(max_vals.max()))))
+
+            # Aplicar filtros con operaciones vectorizadas
+            filtros_numericos = (df[col_numericas] >= rangos[0]) & (df[col_numericas] <= rangos[1])
+            df_filtrado = df_filtrado[filtros_numericos.all(axis=1)]
+
+        # Aplicar filtros categóricos
+        if col_categoricas.size > 0:
+            seleccion_categoricas = np.array(st.multiselect("Selecciona categorías:", df[col_categoricas].drop_duplicates().values.flatten().tolist()))
+
+            if seleccion_categoricas.size > 0:
+                filtros_categoricos = df[col_categoricas].isin(seleccion_categoricas)
+                df_filtrado = df_filtrado[filtros_categoricos.all(axis=1)]
 
     # Crear un GeoDataFrame con los puntos filtrados
     gdf = gpd.GeoDataFrame(df_filtrado, geometry=gpd.points_from_xy(df_filtrado['Longitud'], df_filtrado['Latitud']), crs="EPSG:4326")
