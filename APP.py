@@ -15,6 +15,43 @@ if 'css_cargado' not in st.session_state:
 
 # Cargar datos
 @st.cache_data
+def analizar_cluster_frecuencia(df, n_clusters=3):
+    """
+    Aplica K-Means para segmentar a los clientes según su frecuencia de compra y ubicación geográfica.
+    Muestra el resultado en un mapa sin usar bucles innecesarios.
+    """
+
+    # Convertir coordenadas y frecuencia de compra a valores numéricos
+    df[['Latitud', 'Longitud', 'Frecuencia_Compra']] = df[['Latitud', 'Longitud', 'Frecuencia_Compra']].apply(pd.to_numeric, errors='coerce')
+    df = df.dropna(subset=['Latitud', 'Longitud', 'Frecuencia_Compra'])
+
+    # Crear un GeoDataFrame
+    gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df['Longitud'], df['Latitud']), crs="EPSG:4326")
+
+    # Aplicar K-Means (usamos solo latitud, longitud y frecuencia de compra para clustering)
+    kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
+    gdf["Cluster"] = kmeans.fit_predict(gdf[['Latitud', 'Longitud', 'Frecuencia_Compra']])
+
+    # Cargar mapa base desde Natural Earth
+    world = gpd.read_file("https://naturalearth.s3.amazonaws.com/50m_cultural/ne_50m_admin_0_countries.zip")
+
+    # Crear figura y ejes
+    fig, ax = plt.subplots(figsize=(10, 6))
+    
+    # Dibujar mapa base
+    world.plot(ax=ax, color="lightgrey", edgecolor="black")
+
+    # Graficar clientes con colores según el cluster
+    gdf.plot(ax=ax, markersize=30, column="Cluster", cmap="viridis", legend=True, alpha=0.7)
+
+    # Etiquetas
+    plt.title(f"Segmentación de Clientes en {n_clusters} Clusters (Frecuencia de Compra)")
+    plt.xlabel("Longitud")
+    plt.ylabel("Latitud")
+
+    # Mostrar en Streamlit
+    st.pyplot(fig)
+    
 def cargar_datos():
     ruta = "https://raw.githubusercontent.com/gabrielawad/programacion-para-ingenieria/refs/heads/main/archivos-datos/aplicaciones/analisis_clientes.csv"
     df = pd.read_csv(ruta)
