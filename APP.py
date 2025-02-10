@@ -71,6 +71,7 @@ def calcular_distancias(df, top_n=10):
     # Calcular matrices de distancia para cada subconjunto
     distancias_por_genero = matriz_distancias(latitudes_genero, longitudes_genero)
     distancias_por_frecuencia = matriz_distancias(latitudes_frecuencia, longitudes_frecuencia)
+    st.write("...........")
 
     return{
         "General": distancias_generales,
