@@ -138,3 +138,4 @@ else:
 
 if df is not None:
     st.sidebar.text("Datos cargados con éxito")
+
