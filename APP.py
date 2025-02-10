@@ -66,30 +66,35 @@ def mapa_calor_ingresos(df):
 # Mapa interactivo de ubicaciones de clientes
 def mapa_ubicaciones_clientes(df):
     """
-    Visualiza la ubicación de los clientes en un mapa mundial sin usar for loops.
-    Utiliza GeoPandas y Matplotlib para mejorar la eficiencia y personalización.
+    Muestra la ubicación de los clientes en un mapa mundial sin usar bucles for.
+    Utiliza GeoPandas y Matplotlib para optimizar el rendimiento.
     """
-    # Asegurar que las coordenadas sean numéricas y sin valores nulos
+
+    # Convertir coordenadas a valores numéricos y eliminar valores nulos
     df[['Latitud', 'Longitud']] = df[['Latitud', 'Longitud']].apply(pd.to_numeric, errors='coerce')
     df = df.dropna(subset=['Latitud', 'Longitud'])
 
-    # Crear GeoDataFrame con sistema de referencia espacial (EPSG:4326 - WGS 84)
+    # Crear un GeoDataFrame con las ubicaciones de los clientes
     gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df['Longitud'], df['Latitud']), crs="EPSG:4326")
 
-    # Cargar mapa base (paquete Natural Earth)
-    world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
+    # Cargar mapa base desde Natural Earth (capa mundial de países)
+    world = gpd.read_file("https://naturalearth.s3.amazonaws.com/50m_cultural/ne_50m_admin_0_countries.zip")
 
-    # Crear el gráfico
+    # Crear figura y ejes
     fig, ax = plt.subplots(figsize=(10, 6))
-    world.plot(ax=ax, color="lightgrey", edgecolor="black")  # Mapa base
-    gdf.plot(ax=ax, markersize=30, color="red", alpha=0.7)  # Clientes
+    
+    # Dibujar el mapa base
+    world.plot(ax=ax, color="lightgrey", edgecolor="black")
+    
+    # Graficar los puntos de los clientes
+    gdf.plot(ax=ax, markersize=30, color="red", alpha=0.7)
 
-    # Etiquetas y título
+    # Etiquetas
     plt.title("Mapa de Ubicaciones de Clientes")
     plt.xlabel("Longitud")
     plt.ylabel("Latitud")
 
-    # Mostrar en Streamlit
+    # Mostrar el gráfico en Streamlit
     st.pyplot(fig)
 # Gráfico de barras por género y frecuencia de compra
 def graficar_barras_genero_frecuencia(df):
