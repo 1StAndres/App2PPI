@@ -4,6 +4,7 @@ geopandas
 matplotlib
 seaborn
 numpy
+folium
+streamlit-folium
 scikit-learn
 shapely
-folium
