@@ -64,50 +64,32 @@ def mapa_calor_ingresos(df):
     st.pyplot(fig)
 
 # Mapa interactivo de ubicaciones de clientes
-def visualizar_mapa_clientes(df):
+def mapa_ubicaciones_clientes(df):
     """
-    Superpone los clientes en el mapa del mundo usando matplotlib y geopandas.
-    Genera tres mapas:
-    - Ubicación global de los clientes.
-    - Segmentación por Género.
-    - Segmentación por Frecuencia de Compra.
+    Visualiza la ubicación de los clientes en un mapa mundial sin usar for loops.
+    Utiliza GeoPandas y Matplotlib para mejorar la eficiencia y personalización.
     """
-
-    # Asegurar que las coordenadas sean numéricas
+    # Asegurar que las coordenadas sean numéricas y sin valores nulos
     df[['Latitud', 'Longitud']] = df[['Latitud', 'Longitud']].apply(pd.to_numeric, errors='coerce')
-
-    # Aplicar interpolación para corregir valores faltantes
-    df_interpolado = df.interpolate(method='linear', limit_direction='both')
-
-    # Crear geometría de puntos
-    geometry = gpd.points_from_xy(df_interpolado['Longitud'], df_interpolado['Latitud'])
+    df = df.dropna(subset=['Latitud', 'Longitud'])
 
     # Crear GeoDataFrame con sistema de referencia espacial (EPSG:4326 - WGS 84)
-    gdf = gpd.GeoDataFrame(df_interpolado, geometry=geometry, crs="EPSG:4326")
+    gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df['Longitud'], df['Latitud']), crs="EPSG:4326")
 
-    # Cargar mapa base
-    ruta_mapa = "https://naturalearth.s3.amazonaws.com/50m_cultural/ne_50m_admin_0_countries.zip"
-    df_mapa = gpd.read_file(ruta_mapa)
+    # Cargar mapa base (paquete Natural Earth)
+    world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
 
-    fig, axes = plt.subplots(1, 3, figsize=(20, 7))
+    # Crear el gráfico
+    fig, ax = plt.subplots(figsize=(10, 6))
+    world.plot(ax=ax, color="lightgrey", edgecolor="black")  # Mapa base
+    gdf.plot(ax=ax, markersize=30, color="red", alpha=0.7)  # Clientes
 
-    # Mapa 1: Clientes Globales
-    df_mapa.plot(ax=axes[0], color="lightgrey", edgecolor="black")
-    gdf.plot(ax=axes[0], markersize=20, color="red", alpha=0.6)
-    axes[0].set_title("Ubicación Global de los Clientes")
+    # Etiquetas y título
+    plt.title("Mapa de Ubicaciones de Clientes")
+    plt.xlabel("Longitud")
+    plt.ylabel("Latitud")
 
-    # Mapa 2: Clientes por Género
-    df_mapa.plot(ax=axes[1], color="lightgrey", edgecolor="black")
-    gdf.plot(ax=axes[1], markersize=20, column="Género", cmap="coolwarm", legend=True, alpha=0.6)
-    axes[1].set_title("Clientes por Género")
-
-    # Mapa 3: Clientes por Frecuencia de Compra
-    df_mapa.plot(ax=axes[2], color="lightgrey", edgecolor="black")
-    gdf.plot(ax=axes[2], markersize=20, column="Frecuencia_Compra", cmap="viridis", legend=True, alpha=0.6)
-    axes[2].set_title("Clientes por Frecuencia de Compra")
-
-    # Ajustar diseño
-    plt.tight_layout()
+    # Mostrar en Streamlit
     st.pyplot(fig)
 # Gráfico de barras por género y frecuencia de compra
 def graficar_barras_genero_frecuencia(df):
